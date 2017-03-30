@@ -1,0 +1,565 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/nodesecurity/nsp#readme"
+
+    >nsp (v2.6.3)</a>
+</h1>
+<h4>The Node Security (nodesecurity.io) command line interface</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.nsp">module nsp</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.nsp.check">
+            function <span class="apidocSignatureSpan">nsp.</span>check
+            <span class="apidocSignatureSpan">(options, callback)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.nsp.getFormatter">
+            function <span class="apidocSignatureSpan">nsp.</span>getFormatter
+            <span class="apidocSignatureSpan">(name)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">nsp.</span>formatters</span>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.nsp.formatters">module nsp.formatters</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.nsp.formatters.codeclimate">
+            function <span class="apidocSignatureSpan">nsp.formatters.</span>codeclimate
+            <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.nsp.formatters.default">
+            function <span class="apidocSignatureSpan">nsp.formatters.</span>default
+            <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.nsp.formatters.json">
+            function <span class="apidocSignatureSpan">nsp.formatters.</span>json
+            <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.nsp.formatters.none">
+            function <span class="apidocSignatureSpan">nsp.formatters.</span>none
+            <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.nsp.formatters.summary">
+            function <span class="apidocSignatureSpan">nsp.formatters.</span>summary
+            <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.nsp" id="apidoc.module.nsp">module nsp</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.nsp.check" id="apidoc.element.nsp.check">
+        function <span class="apidocSignatureSpan">nsp.</span>check
+        <span class="apidocSignatureSpan">(options, callback)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">check = function (options, callback) {
+
+  if (typeof options === &#x27;function&#x27;) {
+    callback = options;
+    options = {};
+  }
+
+  var proxy = options.proxy || Conf.proxy;
+  proxy = proxy || process.env.https_proxy || process.env.HTTPS_PROXY;
+  delete options.proxy;
+
+  if (proxy) {
+    Conf.api.agent = new ProxyAgent(proxy);
+  }
+
+  // Set defaults
+  var wreck = Wreck.defaults(Conf.api);
+
+  var shrinkwrap;
+  var offline = options.offline;
+  delete options.offline;
+
+  var advisoriesPath = options.advisoriesPath || Conf.advisoriesPath;
+  delete options.advisoriesPath;
+
+  if (!options.exceptions) {
+    options.exceptions = Conf.exceptions;
+  }
+
+  // validate if options are correct
+  var isValid = Joi.validate(options, internals.optionSchema);
+
+  if (isValid.error) {
+    return callback(isValid.error);
+  }
+
+  options = isValid.value;
+
+  if (typeof options.package === &#x27;string&#x27;) {
+    try {
+      options.package = require(options.package);
+    }
+    catch (e) {
+      return callback(e);
+    }
+  }
+
+  options.package = SanitizePackage(options.package);
+
+  if (typeof options.shrinkwrap === &#x27;string&#x27;) {
+    try {
+      shrinkwrap = Fs.readFileSync(require.resolve(options.shrinkwrap), &#x27;utf8&#x27;);
+      options.shrinkwrap = require(options.shrinkwrap);
+    }
+    catch (e) {
+      delete options.shrinkwrap;
+    }
+  }
+  else {
+    shrinkwrap = JSON.stringify(options.shrinkwrap, null, 2);
+  }
+
+  if (offline) {
+    var advisories;
+
+    if (!options.shrinkwrap) {
+      return callback(new Error(&#x27;npm-shrinkwrap.json is required for offline mode&#x27;));
+    }
+    try {
+      if (advisoriesPath) {
+        if (!PathIsAbsolute(advisoriesPath)) {
+          advisoriesPath = Path.resolve(process.cwd(), advisoriesPath);
+        }
+
+        advisories = require(advisoriesPath);
+      }
+      else {
+        advisories = require(&#x27;../advisories&#x27;);
+      }
+    }
+    catch (e) {
+      return callback(new Error(&#x27;Offline mode requires a local advisories.json&#x27;));
+    }
+
+
+    advisories = advisories.results;
+    var exceptions = options.exceptions.map(function (exception) {
+
+      return Number(internals.exceptionRegex.exec(exception)[1]);
+    });
+
+    var generateContent = function (advisory) {
+
+      var markdown = [
+        &#x27;# &#x27; + advisory.title,
+        &#x27;## Overview:&#x27;,
+        advisory.overview
+      ];
+
+      if (advisory.recommendation) {
+        markdown.push(&#x27;&#x27;);
+        markdown.push(&#x27;## Recommendation:&#x27;);
+        markdown.push(advisory.recommendation);
+      }
+
+      if (advisory.references) {
+        markdown.push(&#x27;&#x27;);
+        markdown.push(&#x27;## References:&#x27;);
+        markdown.push(advisory.references);
+      }
+
+      return markdown.join(&#x27;\n&#x27;);
+    };
+
+    NPMUtils.getShrinkwrapDependencies(options.shrinkwrap, function (err, tree) {
+
+      var keys = Object.keys(tree);
+      var vulns = keys.map(function (key) {
+
+        var mod = tree[key];
+        var matches = [];
+        for (var i = 0, il = advisories.length; i &#x3c; il; ++i) {
+          if (mod.name === advisories[i].module_name &#x26;&#x26;
+              exceptions.indexOf(advisories[i].id) === -1 &#x26;&#x26;
+              Semver.satisfies(mod.version, advisories[i].vulnerable_versions)) {
+
+            matches.push(advisories[i]);
+          }
+        }
+
+        return {
+          module: mod.name,
+          version: mod.version,
+          vulnerabilities: matches
+        };
+      }).filter(function (mod) {
+
+        return mod.vulnerabilities.length &#x3e; 0;
+      });
+
+      var results = [];
+      for (var i = 0, il = vulns.length; i &#x3c; il; ++i) {
+        var path = tree[vulns[i].module + &#x27;@&#x27; + vulns[i].version].paths;
+        var line = internals.findLines(shrinkwrap, vulns[i].module, vulns[i].version);
+        for (var x = 0, xl = vulns[i].vulnerabilities.length; x &#x3c; xl; ++x) {
+          results.push({
+            module: vulns[i].module,
+            version: vulns[i].version,
+            vulnerable_versions: vulns[i].vulnerabilities[x].vulnerable_versions,
+            patched_versions: vulns[i].vulnerabilities[x].patched_versions,
+            title: vulns[i].vulnerabilities[x].title,
+            path: path,
+            advisory: &#x27;htt ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.nsp.getFormatter" id="apidoc.element.nsp.getFormatter">
+        function <span class="apidocSignatureSpan">nsp.</span>getFormatter
+        <span class="apidocSignatureSpan">(name)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">getFormatter = function (name) {
+  if (Object.keys(Formatters).indexOf(name) !== -1) {
+    return Formatters[name];
+  }
+
+  try {
+    return require(&#x27;nsp-formatter-&#x27; + name);
+  }
+  catch (e) {}
+
+  return Formatters.default;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.nsp.formatters" id="apidoc.module.nsp.formatters">module nsp.formatters</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.nsp.formatters.codeclimate" id="apidoc.element.nsp.formatters.codeclimate">
+        function <span class="apidocSignatureSpan">nsp.formatters.</span>codeclimate
+        <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">codeclimate = function (err, data, pkgPath) {
+
+  if (err) {
+    return err.stack;
+  }
+
+  if (!data.length) {
+    return;
+  }
+
+  var returnString = &#x27;&#x27;;
+  for (var i = 0, il = data.length; i &#x3c; il; ++i) {
+    returnString += JSON.stringify({
+      type: &#x27;issue&#x27;,
+      check_name: &#x27;Vulnerable module &#x22;&#x27; + data[i].module + &#x27;&#x22; identified&#x27;,
+      description: &#x27;`&#x27; + data[i].module + &#x27;` &#x27; + data[i].title,
+      categories: [&#x27;Security&#x27;],
+      remediation_points: 300000,
+      content: {
+        body: data[i].content
+      },
+      location: {
+        path: &#x27;npm-shrinkwrap.json&#x27;,
+        lines: {
+          begin: data[i].line.start,
+          end: data[i].line.end
+        }
+      }
+    }) + &#x27;\0\n&#x27;;
+  }
+
+  return returnString;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.nsp.formatters.default" id="apidoc.element.nsp.formatters.default">
+        function <span class="apidocSignatureSpan">nsp.formatters.</span>default
+        <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">default = function (err, data, pkgPath) {
+
+  var returnString = &#x27;&#x27;;
+
+  if (err) {
+    if (data) {
+      returnString += Chalk.red(&#x27;(+) &#x27;) + &#x27;Debug output: &#x27; + JSON.stringify(Buffer.isBuffer(data) ? data.toString() : data) + &#x27;\
+n&#x27;;
+    }
+
+    return returnString + Chalk.yellow(&#x27;(+) &#x27;) + err;
+  }
+
+  var width = 80;
+  if (process.stdout.isTTY) {
+    width = process.stdout.getWindowSize()[0] - 10;
+  }
+  if (data.length === 0) {
+
+    return Chalk.green(&#x27;(+)&#x27;) + &#x27; No known vulnerabilities found&#x27;;
+  }
+
+  returnString += Chalk.red(&#x27;(+) &#x27;) + data.length + &#x27; vulnerabilities found\n&#x27;;
+
+  data.sort(function(a, b) {
+
+    return b.cvss_score - a.cvss_score;
+  }).forEach(function (finding) {
+
+    var table = new Table({
+      head: [&#x27;&#x27;, finding.title],
+      colWidths: [15, width - 15]
+    });
+
+    table.push([&#x27;Name&#x27;, finding.module]);
+    table.push([&#x27;CVSS&#x27;, finding.cvss_score + &#x27; (&#x27; + Cvss.getRating(finding.cvss_score) + &#x27;)&#x27;]);
+    table.push([&#x27;Installed&#x27;, finding.version]);
+    table.push([&#x27;Vulnerable&#x27;, finding.vulnerable_versions === &#x27;&#x3c;=99.999.99999&#x27; ? &#x27;All&#x27; : finding.vulnerable_versions]);
+    table.push([&#x27;Patched&#x27;, finding.patched_versions === &#x27;&#x3c;0.0.0&#x27; ? &#x27;None&#x27; : finding.patched_versions]);
+    table.push([&#x27;Path&#x27;, finding.path.join(&#x27; &#x3e; &#x27;)]);
+    table.push([&#x27;More Info&#x27;, finding.advisory]);
+
+    returnString += table.toString() + &#x27;\n&#x27;;
+  });
+
+  return returnString;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+};
+
+internals.exceptionRegex = /^https\:\/\/nodesecurity\.io\/advisories\/([0-9]+)$/;
+
+internals.optionSchema = Joi.object({
+package: Joi.alternatives().try(Joi.string(), Joi.object()),
+shrinkwrap: Joi.alternatives().try(Joi.string(), Joi.object()),
+exceptions: Joi.array().items(Joi.string().regex(internals.exceptionRegex)).<span class="apidocCodeKeywordSpan">default</span>([]),
+advisoriesPath: Joi.string(),
+proxy: Joi.string()
+}).or([&#x27;package&#x27;, &#x27;shrinkwrap&#x27;]);
+
+/*
+options should be an object that contains one or more of the keys package, shrinkwrap, offline, advisoriesPath
+{
+...</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.nsp.formatters.json" id="apidoc.element.nsp.formatters.json">
+        function <span class="apidocSignatureSpan">nsp.formatters.</span>json
+        <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">json = function (err, data, pkgPath) {
+
+  if (err) {
+    return &#x27;Debug output: &#x27; + JSON.stringify(Buffer.isBuffer(data) ? data.toString() : data) + &#x27;\n&#x27; + JSON.stringify(err);
+  }
+
+  return JSON.stringify(data, null, 2);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.nsp.formatters.none" id="apidoc.element.nsp.formatters.none">
+        function <span class="apidocSignatureSpan">nsp.formatters.</span>none
+        <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">none = function (err, data, pkgPath) {
+
+  return &#x27;&#x27;;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.nsp.formatters.summary" id="apidoc.element.nsp.formatters.summary">
+        function <span class="apidocSignatureSpan">nsp.formatters.</span>summary
+        <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">summary = function (err, data, pkgPath) {
+
+  var returnString = &#x27;&#x27;;
+
+  if (err) {
+    if (data) {
+      returnString += Chalk.red(&#x27;(+) &#x27;) + &#x27;Debug output: &#x27; + JSON.stringify(Buffer.isBuffer(data) ? data.toString() : data) + &#x27;\
+n&#x27;;
+    }
+
+    return returnString + Chalk.yellow(&#x27;(+) &#x27;) + err;
+  }
+
+  if (data.length === 0) {
+
+    return Chalk.green(&#x27;(+)&#x27;) + &#x27; No known vulnerabilities found&#x27;;
+  }
+
+  returnString += Chalk.red(&#x27;(+) &#x27;) + data.length + &#x27; vulnerabilities found\n&#x27;;
+
+  var table = new Table({
+    head: [&#x27;Name&#x27;, &#x27;Installed&#x27;, &#x27;Patched&#x27;, &#x27;Path&#x27;, &#x27;More Info&#x27;],
+    chars: {
+      top: &#x27;&#x27;,
+      &#x27;top-mid&#x27;: &#x27;&#x27;,
+      &#x27;top-left&#x27;: &#x27;&#x27;,
+      &#x27;top-right&#x27;: &#x27;&#x27;,
+      &#x27;bottom&#x27;: &#x27;&#x27;,
+      &#x27;bottom-mid&#x27;: &#x27;&#x27;,
+      &#x27;bottom-left&#x27;: &#x27;&#x27;,
+      &#x27;bottom-right&#x27;: &#x27;&#x27;,
+      left: &#x27;&#x27;,
+      &#x27;left-mid&#x27;: &#x27;&#x27;,
+      &#x27;mid&#x27;: &#x27;&#x27;,
+      &#x27;mid-mid&#x27;: &#x27;&#x27;,
+      right: &#x27;&#x27;,
+      &#x27;right-mid&#x27;: &#x27;&#x27;,
+      middle: &#x27; &#x27;
+    }
+  });
+
+  data.forEach(function (finding) {
+
+    table.push([finding.module, finding.version, finding.patched_versions === &#x27;&#x3c;0.0.0&#x27; ? &#x27;None&#x27; : finding.patched_versions, finding
+.path.join(&#x27; &#x3e; &#x27;), finding.advisory]);
+  });
+
+  returnString += table.toString() + &#x27;\n&#x27;;
+  return returnString;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
