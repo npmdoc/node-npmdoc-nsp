@@ -74,7 +74,32 @@
 
         <li>
 
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">nsp.</span>config</span>
+
+        </li>
+
+        <li>
+
             <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">nsp.</span>formatters</span>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">nsp.</span>root</span>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.nsp.config">module nsp.config</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.nsp.config.update">
+            function <span class="apidocSignatureSpan">nsp.config.</span>update
+            <span class="apidocSignatureSpan">(settings, callback)</span>
+            </a>
 
         </li>
 
@@ -124,6 +149,31 @@
             function <span class="apidocSignatureSpan">nsp.formatters.</span>summary
             <span class="apidocSignatureSpan">(err, data, pkgPath)</span>
             </a>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.nsp.root">module nsp.root</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.nsp.root.command">
+            function <span class="apidocSignatureSpan">nsp.root.</span>command
+            <span class="apidocSignatureSpan">(args)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">nsp.root.</span>options</span>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">string <span class="apidocSignatureSpan">nsp.root.</span>name</span>
 
         </li>
 
@@ -323,6 +373,68 @@
     </ul>
 
 
+
+
+
+
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.nsp.config" id="apidoc.module.nsp.config">module nsp.config</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.nsp.config.update" id="apidoc.element.nsp.config.update">
+        function <span class="apidocSignatureSpan">nsp.config.</span>update
+        <span class="apidocSignatureSpan">(settings, callback)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">update = function (settings, callback) {
+
+  var home = process.platform === 'win32' ? process.env.USERPROFILE : process.env.HOME;
+  var configPath = Path.join(home, '.nsprc');
+  var current = {};
+  try {
+    current = JSON.parse(Fs.readFileSync(configPath));
+  }
+  catch (err) {}
+
+  for (var setting in settings) {
+    if (settings[setting] === '') {
+      delete current[setting];
+    }
+    else {
+      current[setting] = settings[setting];
+    }
+  }
+
+  // if it's empty delete the config file entirely to clean up
+  // after ourselves.
+  if (Object.keys(current).length === 0) {
+    try {
+      Fs.unlinkSync(configPath);
+    }
+    catch (err) {}
+
+    return callback(null);
+  }
+
+  // try to write it back
+
+  Fs.writeFile(configPath, JSON.stringify(current, null, 2), 'utf8', function (err) {
+
+    if (err) {
+      return callback(err);
+    }
+    return callback();
+
+  });
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
 
 
 </div>
@@ -546,6 +658,35 @@ n';
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">n/a</pre></li>
     </ul>
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.nsp.root" id="apidoc.module.nsp.root">module nsp.root</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.nsp.root.command" id="apidoc.element.nsp.root.command">
+        function <span class="apidocSignatureSpan">nsp.root.</span>command
+        <span class="apidocSignatureSpan">(args)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">command = function (args) {
+
+  if (args.version) {
+    return console.log(require('../../package.json').version);
+  }
+  return usage();
+
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+
 
 
 </div>
